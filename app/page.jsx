@@ -26,7 +26,7 @@ const Home = () => {
             <div className="text-center xl:text-left order-2 xl:order-none">
               <span className="tetx-xl">AI|ML Developer</span>
               <h1 className="h1 mb-6">
-                Hello I&apos;m<br/><span className="text-accent">Gokul Kiran</span>
+                Hello I'm<br/><span className="text-accent">Gokul Kiran</span>
               </h1>
                 <p className="max-w-[500px] mb-9 text-white/80">
                   A enthusiastic B.Tech student specializing in AI, proficient in Matlab, AI/ML, and Python, 
