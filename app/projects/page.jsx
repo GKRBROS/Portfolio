@@ -14,7 +14,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import Image from "next/image";
 import WorkSliderBtns from "@/components/WorkSliderBtns";
 
-const projects =[
+const project =[
     {
         num: '01',
         category: 'AI|ML',
@@ -23,7 +23,7 @@ const projects =[
             "This is a voice emotion recognition system. The system will analyze audio files to predict the emotions conveyed by the speaker's voice.",
         stack: [
             {name: "Python"}, {name: "Flask"}, {name: "Html"}, {name: "Css"}],
-        image: '/images/project1.png',
+        image: '/public/images/project1.png',
         live: "",
         github: "https://github.com/GKRBROS/Voice_Emotion_Recognition.git",
     },
@@ -35,7 +35,7 @@ const projects =[
             "A python discord bot that delivers the most recent and accurate news from a variety of sources. To make sure users get the most accurate and up-to-date information possible, the bot assesses and evaluates news sources. ",
         stack: [
             {name: "Python"}, {name: "Discord"}],
-        image: '/images/project2.png',
+        image: '/public/images/project2.png',
         live: "",
         github: "https://github.com/GKRBROS/TCL_PYTHON_PROJECT.git",
     },
@@ -47,7 +47,7 @@ const projects =[
             "A first person shooting game.",
         stack: [
             {name: "C#"}, {name: "Unity Hub"}, {name: "Visual Studio"}, {name: "Blender"}],
-        image: '/images/project3.png',
+        image: '/public/images/project3.png',
         live: "",
         github: "https://github.com/GKRBROS/Game_Development.git",
     },
@@ -59,13 +59,13 @@ const projects =[
             "A 3d model buildd using blender.",
         stack: [
             {name: "Blender"}],
-        image: '/images/project4.png',
+        image: '/public/images/project4.png',
         live: "",
         github: "https://github.com/GKRBROS/Game_Development.git",
     },
 ];
 
-const Work = () => {
+const projects = () => {
     const [project, setProject] =useState(projects[0]);
 
     const handleSlideChange = (swiper) =>{
@@ -172,4 +172,4 @@ const Work = () => {
         </motion.section>
     );
 };
-export default Work;
+export default projects;
