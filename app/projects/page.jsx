@@ -66,7 +66,7 @@ const project =[
 ];
 
 const projects = () => {
-    const [project, setProject] =useState(projects[0]);
+    const [project, setProject] =useState(project[0]);
 
     const handleSlideChange = (swiper) =>{
         //get current slide index
