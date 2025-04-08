@@ -39,7 +39,7 @@ const about={
         },
         {
             fieldName: "Languages:",
-            fieldValue: "English, Malayalam, Hindi",
+            fieldValue: "English, Malayalam, Hindi, Tamil",
         },
     ]
 };
