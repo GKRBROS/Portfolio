@@ -13,7 +13,7 @@ const Home = () => {
   const handleDownload = () => {
     const link = document.createElement('a');
     link.href = '/Images/Gokul Kiran R - B.Tech - 2025.pdf'; // Path to your PDF file
-    link.setAttribute('download', 'Gokul_Kiran_Resume.pdf'); // Set the file name to download as
+    link.setAttribute('download', 'Gokul Kiran R - B.Tech - 2025.pdf'); // Set the file name to download as
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
