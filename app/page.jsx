@@ -12,7 +12,7 @@ import Stats from "@/components/Stats";
 const Home = () => {
   const handleDownload = () => {
     const link = document.createElement('a');
-    link.href = '/images/gokul_resume.pdf'; // Path to your PDF file
+    link.href = '/Images/Gokul Kiran R - B.Tech - 2025.pdf'; // Path to your PDF file
     link.setAttribute('download', 'Gokul_Kiran_Resume.pdf'); // Set the file name to download as
     document.body.appendChild(link);
     link.click();
