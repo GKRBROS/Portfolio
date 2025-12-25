@@ -10,13 +10,25 @@ import Stats from "@/components/Stats";
 
 
 const Home = () => {
-  const handleDownload = () => {
-    const link = document.createElement('a');
-    link.href = '/Images/Gokul_Kiran_Resume.pdf'; // Path to your PDF file
-    link.setAttribute('download', 'Gokul Kiran Resume.pdf'); // Set the file name to download as
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleDownload = async () => {
+    try {
+      const res = await fetch('/api/resume');
+      const data = await res.json();
+      const url = data?.url;
+      if (!url) {
+        alert('Resume not found. Please upload via Admin.');
+        return;
+      }
+      const link = document.createElement('a');
+      link.href = url;
+      // For Blob URLs we open instead of forcing download to avoid CORS issues
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (e) {
+      alert('Unable to fetch resume.');
+    }
   };
   return ( 
       <section className="h-full">
@@ -38,7 +50,7 @@ const Home = () => {
                     variant="outline" 
                     size="lg" 
                     className="uppercase flex items-center gap-2"
-                    onClick={handleDownload} // Trigger download on click
+                    onClick={handleDownload}
                   >
                     <span>Download Resume</span>
                     <FiDownload className="text-xl"/>

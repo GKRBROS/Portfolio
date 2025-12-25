@@ -16,6 +16,7 @@ export default function AdminDashboard() {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [resumeFile, setResumeFile] = useState(null);
+  const [currentResumeUrl, setCurrentResumeUrl] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
   const [newProject, setNewProject] = useState({
@@ -48,6 +49,12 @@ export default function AdminDashboard() {
 
       setAnalytics(analyticsData);
       setProjects(projectsData.projects || []);
+      // Fetch current resume URL
+      try {
+        const resumeRes = await fetch('/api/resume');
+        const resumeData = await resumeRes.json();
+        setCurrentResumeUrl(resumeData?.url || null);
+      } catch {}
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
@@ -294,9 +301,13 @@ export default function AdminDashboard() {
               </form>
 
               <div className="mt-6 p-4 bg-primary rounded-lg">
-                <p className="text-sm text-white/80">
-                  Current resume: <span className="text-accent">Gokul_Kiran_Resume.pdf</span>
-                </p>
+                    {currentResumeUrl ? (
+                      <p className="text-sm text-white/80">
+                        Current resume: <a href={currentResumeUrl} target="_blank" className="text-accent underline">Open</a>
+                      </p>
+                    ) : (
+                      <p className="text-sm text-white/80">No resume uploaded yet.</p>
+                    )}
                 <p className="text-xs text-white/60 mt-2">
                   Uploading a new resume will replace the existing one.
                 </p>
