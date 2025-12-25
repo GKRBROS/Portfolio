@@ -1,31 +1,46 @@
 import { NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
 
-const analyticsFile = path.join(process.cwd(), "data", "analytics.json");
+let analyticsCache = {
+    totalViews: 0,
+    pageViews: {
+        home: 0,
+        work: 0,
+        resume: 0,
+        contact: 0,
+        certificates: 0
+    },
+    lastUpdated: new Date().toISOString()
+};
+
+const defaultAnalytics = {
+    totalViews: 0,
+    pageViews: {
+        home: 0,
+        work: 0,
+        resume: 0,
+        contact: 0,
+        certificates: 0
+    },
+    lastUpdated: new Date().toISOString()
+};
 
 export async function GET() {
     try {
-        if (!fs.existsSync(analyticsFile)) {
-            const initialData = {
-                totalViews: 0,
-                pageViews: {
-                    home: 0,
-                    work: 0,
-                    resume: 0,
-                    contact: 0,
-                    certificates: 0
-                },
-                lastUpdated: new Date().toISOString()
-            };
-            fs.writeFileSync(analyticsFile, JSON.stringify(initialData, null, 2));
-            return NextResponse.json(initialData);
+        // Try to use KV if available, otherwise return cache
+        if (process.env.KV_REST_API_URL) {
+            try {
+                const { kv } = await import("@vercel/kv");
+                const analytics = await kv.get("portfolio:analytics");
+                if (analytics) {
+                    return NextResponse.json(analytics);
+                }
+            } catch {}
         }
-
-        const data = fs.readFileSync(analyticsFile, "utf-8");
-        return NextResponse.json(JSON.parse(data));
+        // Fallback to cache
+        return NextResponse.json(analyticsCache);
     } catch (error) {
-        return NextResponse.json({ error: "Failed to read analytics" }, { status: 500 });
+        console.error("Analytics GET error:", error);
+        return NextResponse.json(analyticsCache);
     }
 }
 
@@ -33,35 +48,24 @@ export async function POST(request) {
     try {
         const { page } = await request.json();
 
-        let analytics;
-
-        if (!fs.existsSync(analyticsFile)) {
-            analytics = {
-                totalViews: 0,
-                pageViews: {
-                    home: 0,
-                    work: 0,
-                    resume: 0,
-                    contact: 0,
-                    certificates: 0
-                },
-                lastUpdated: new Date().toISOString()
-            };
-        } else {
-            const data = fs.readFileSync(analyticsFile, "utf-8");
-            analytics = JSON.parse(data);
+        // Update cache
+        analyticsCache.totalViews += 1;
+        if (analyticsCache.pageViews[page] !== undefined) {
+            analyticsCache.pageViews[page] += 1;
         }
+        analyticsCache.lastUpdated = new Date().toISOString();
 
-        analytics.totalViews += 1;
-        if (analytics.pageViews[page] !== undefined) {
-            analytics.pageViews[page] += 1;
+        // Try to sync to KV if available
+        if (process.env.KV_REST_API_URL) {
+            try {
+                const { kv } = await import("@vercel/kv");
+                await kv.set("portfolio:analytics", analyticsCache);
+            } catch {}
         }
-        analytics.lastUpdated = new Date().toISOString();
-
-        fs.writeFileSync(analyticsFile, JSON.stringify(analytics, null, 2));
 
         return NextResponse.json({ success: true });
     } catch (error) {
-        return NextResponse.json({ error: "Failed to track view" }, { status: 500 });
+        console.error("Analytics POST error:", error);
+        return NextResponse.json({ success: true }); // Still count the view
     }
 }

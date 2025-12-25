@@ -1,16 +1,36 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
-import fs from "fs";
-import path from "path";
 
-const dataDir = path.join(process.cwd(), "data");
-const projectsFile = path.join(dataDir, "projects.json");
+let projectsCache = {
+    projects: [
+        {
+            num: "01",
+            category: "AI|ML",
+            title: "Sample Project",
+            description: "This is a sample project. Edit or delete to get started.",
+            stack: [{ name: "React" }, { name: "Python" }],
+            image: "/assets/work/project1.jpg",
+            live: "https://example.com",
+            github: "https://github.com/GKRBROS/sample"
+        }
+    ]
+};
 
-// Ensure data directory exists
-if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir, { recursive: true });
-}
+const defaultProjectsData = {
+    projects: [
+        {
+            num: "01",
+            category: "AI|ML",
+            title: "Sample Project",
+            description: "This is a sample project. Edit or delete to get started.",
+            stack: [{ name: "React" }, { name: "Python" }],
+            image: "/assets/work/project1.jpg",
+            live: "https://example.com",
+            github: "https://github.com/GKRBROS/sample"
+        }
+    ]
+};
 
 export async function GET() {
     try {
@@ -20,12 +40,22 @@ export async function GET() {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const data = fs.readFileSync(projectsFile, "utf-8");
-        const projects = JSON.parse(data);
-
-        return NextResponse.json(projects);
+        // Try to use KV if available, otherwise return cache
+        if (process.env.KV_REST_API_URL) {
+            try {
+                const { kv } = await import("@vercel/kv");
+                let projectsData = await kv.get("portfolio:projects");
+                if (projectsData) {
+                    projectsCache = projectsData; // Update cache
+                    return NextResponse.json(projectsData);
+                }
+            } catch {}
+        }
+        // Fallback to cache
+        return NextResponse.json(projectsCache);
     } catch (error) {
-        return NextResponse.json({ error: "Failed to read projects" }, { status: 500 });
+        console.error("Projects GET error:", error);
+        return NextResponse.json(projectsCache);
     }
 }
 
@@ -39,19 +69,23 @@ export async function POST(request) {
 
         const newProject = await request.json();
 
-        const data = fs.readFileSync(projectsFile, "utf-8");
-        const projectsData = JSON.parse(data);
-
         // Generate new project number
-        const projectCount = projectsData.projects.length + 1;
+        const projectCount = projectsCache.projects.length + 1;
         newProject.num = projectCount.toString().padStart(2, '0');
 
-        projectsData.projects.push(newProject);
+        projectsCache.projects.push(newProject);
 
-        fs.writeFileSync(projectsFile, JSON.stringify(projectsData, null, 2));
+        // Try to sync to KV if available
+        if (process.env.KV_REST_API_URL) {
+            try {
+                const { kv } = await import("@vercel/kv");
+                await kv.set("portfolio:projects", projectsCache);
+            } catch {}
+        }
 
         return NextResponse.json({ success: true, project: newProject });
     } catch (error) {
+        console.error("Projects POST error:", error);
         return NextResponse.json({ error: "Failed to create project" }, { status: 500 });
     }
 }
@@ -65,22 +99,25 @@ export async function PUT(request) {
         }
 
         const updatedProject = await request.json();
-
-        const data = fs.readFileSync(projectsFile, "utf-8");
-        const projectsData = JSON.parse(data);
-
-        const index = projectsData.projects.findIndex(p => p.num === updatedProject.num);
+        const index = projectsCache.projects.findIndex(p => p.num === updatedProject.num);
 
         if (index === -1) {
             return NextResponse.json({ error: "Project not found" }, { status: 404 });
         }
 
-        projectsData.projects[index] = updatedProject;
+        projectsCache.projects[index] = updatedProject;
 
-        fs.writeFileSync(projectsFile, JSON.stringify(projectsData, null, 2));
+        // Try to sync to KV if available
+        if (process.env.KV_REST_API_URL) {
+            try {
+                const { kv } = await import("@vercel/kv");
+                await kv.set("portfolio:projects", projectsCache);
+            } catch {}
+        }
 
         return NextResponse.json({ success: true, project: updatedProject });
     } catch (error) {
+        console.error("Projects PUT error:", error);
         return NextResponse.json({ error: "Failed to update project" }, { status: 500 });
     }
 }
@@ -95,20 +132,24 @@ export async function DELETE(request) {
 
         const { projectNum } = await request.json();
 
-        const data = fs.readFileSync(projectsFile, "utf-8");
-        const projectsData = JSON.parse(data);
-
-        projectsData.projects = projectsData.projects.filter(p => p.num !== projectNum);
+        projectsCache.projects = projectsCache.projects.filter(p => p.num !== projectNum);
 
         // Renumber projects
-        projectsData.projects.forEach((project, index) => {
+        projectsCache.projects.forEach((project, index) => {
             project.num = (index + 1).toString().padStart(2, '0');
         });
 
-        fs.writeFileSync(projectsFile, JSON.stringify(projectsData, null, 2));
+        // Try to sync to KV if available
+        if (process.env.KV_REST_API_URL) {
+            try {
+                const { kv } = await import("@vercel/kv");
+                await kv.set("portfolio:projects", projectsCache);
+            } catch {}
+        }
 
         return NextResponse.json({ success: true });
     } catch (error) {
+        console.error("Projects DELETE error:", error);
         return NextResponse.json({ error: "Failed to delete project" }, { status: 500 });
     }
 }

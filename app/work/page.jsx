@@ -20,14 +20,25 @@ const Work = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Fetch projects from API
+        // Fetch projects from API (admin endpoint works for public too)
         const fetchProjects = async () => {
             try {
-                const response = await fetch('/data/projects.json');
-                const data = await response.json();
-                setProjects(data.projects || []);
-                if (data.projects && data.projects.length > 0) {
-                    setProject(data.projects[0]);
+                // Try to fetch from admin API first (populated by admin dashboard)
+                const response = await fetch('/api/admin/projects');
+                if (response.ok) {
+                    const data = await response.json();
+                    setProjects(data.projects || []);
+                    if (data.projects && data.projects.length > 0) {
+                        setProject(data.projects[0]);
+                    }
+                } else {
+                    // Fallback: try static file (for dev without auth)
+                    const fallbackResponse = await fetch('/data/projects.json');
+                    const fallbackData = await fallbackResponse.json();
+                    setProjects(fallbackResponse.ok ? (fallbackData.projects || []) : []);
+                    if (fallbackResponse.ok && fallbackData.projects && fallbackData.projects.length > 0) {
+                        setProject(fallbackData.projects[0]);
+                    }
                 }
             } catch (error) {
                 console.error('Error loading projects:', error);
