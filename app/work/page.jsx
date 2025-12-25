@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 import { Swiper, SwiperSlide  } from "swiper/react";
 import "swiper/css";
@@ -14,89 +14,54 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import Image from "next/image";
 import WorkSliderBtns from "@/components/WorkSliderBtns";
 
-const projects =[
-    {
-        num: '01',
-        category: 'AI|ML',
-        title: 'Voice Emotion Recognition',
-        description:
-            "This is a voice emotion recognition system. The system will analyze audio files to predict the emotions conveyed by the speaker's voice.",
-        stack: [
-            {name: "Python"}, {name: "Flask"}, {name: "Html"}, {name: "Css"}],
-        image: '/Images/project1.png',
-        live: "",
-        github: "https://github.com/GKRBROS/Voice_Emotion_Recognition.git",
-    },
-    {
-        num: '02',
-        category: 'AI|ML',
-        title: 'Streamlining Hospital Waste Management',
-        description:
-            "A deep learning-based system to classify hospital waste into organic and inorganic categories for efficient and eco-friendly disposal. The system uses image processing techniques to analyze waste images and classify them accordingly.",
-        stack: [
-            {name: "Python"}, {name: "Flask"}, {name: "Html"}, {name: "Css"}, {name: "JS"}, {name: "Tensorflow"}, {name: "Keras"}],
-        image: '/Images/project5.png',
-        live: "",
-        github: "https://github.com/GKRBROS/STREAMLINING-HOSPITAL-WASTE-MANAGEMENT.git",
-    },
-    {
-        num: '03',
-        category: 'Bot',
-        title: 'Dewz Discord Bot',
-        description:
-            "A python discord bot that delivers the most recent and accurate news from a variety of sources. To make sure users get the most accurate and up-to-date information possible, the bot assesses and evaluates news sources. ",
-        stack: [
-            {name: "Python"}, {name: "Discord"}],
-        image: '/Images/project2.png',
-        live: "",
-        github: "https://github.com/GKRBROS/TCL_PYTHON_PROJECT.git",
-    },
-    {
-        num: '04',
-        category: 'Website',
-        title: 'Brahma25',
-        description:
-            "Developed a website for for college fest techno-cultural fest 'Brahma25'. The website includes all the details about the fest, including events, registration, and more.",
-        stack: [
-            {name: "Html"}, {name: "Css"}, {name: "JS"}, {name: "API"}],
-        image: '/Images/project6.png',
-        live: "https://brahma25.live/",
-        github: "https://github.com/GKRBROS/Brahma25.git",
-    },
-    {
-        num: '05',
-        category: 'Game',
-        title: 'FPS Shooting Game',
-        description:
-            "A first person shooting game.",
-        stack: [
-            {name: "C#"}, {name: "Unity Hub"}, {name: "Visual Studio"}, {name: "Blender"}],
-        image: '/Images/project3.png',
-        live: "",
-        github: "https://github.com/GKRBROS/Game_Development.git",
-    },
-    {
-        num: '06',
-        category: '3D Model',
-        title: '3D Model Design',
-        description:
-            "A 3d model buildd using blender.",
-        stack: [
-            {name: "Blender"}],
-        image: '/Images/project4.png',
-        live: "",
-        github: "https://github.com/GKRBROS/Game_Development.git",
-    },
-];
-
 const Work = () => {
-    const [project, setProject] = useState(projects[0]);
+    const [projects, setProjects] = useState([]);
+    const [project, setProject] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        // Fetch projects from API
+        const fetchProjects = async () => {
+            try {
+                const response = await fetch('/data/projects.json');
+                const data = await response.json();
+                setProjects(data.projects || []);
+                if (data.projects && data.projects.length > 0) {
+                    setProject(data.projects[0]);
+                }
+            } catch (error) {
+                console.error('Error loading projects:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchProjects();
+    }, []);
 
     const handleSlideChange = (swiper) =>{
         //get current slide index
         const currentIndex = swiper.activeIndex;
         //update project state based on current slide index
-        setProject(projects[currentIndex]);
+        if (projects[currentIndex]) {
+            setProject(projects[currentIndex]);
+        }
+    }
+
+    if (loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="text-2xl text-accent">Loading projects...</div>
+            </div>
+        );
+    }
+
+    if (!project || projects.length === 0) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="text-2xl text-white/60">No projects found</div>
+            </div>
+        );
     }
 
     return ( 
