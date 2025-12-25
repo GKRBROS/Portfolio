@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
-import { list } from "@vercel/blob";
 
 export async function GET() {
   try {
@@ -9,8 +8,9 @@ export async function GET() {
     const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
 
     if (isVercel && blobToken) {
-      // Try to read pointer; else list latest
       try {
+        // Try to list from Blob if token available
+        const { list } = await import("@vercel/blob");
         const { blobs } = await list({ prefix: "resume/", token: blobToken });
         if (blobs && blobs.length > 0) {
           const latest = blobs
@@ -20,18 +20,21 @@ export async function GET() {
             return NextResponse.json({ url: latest.url });
           }
         }
-      } catch {}
-      // Fallback to pointer JSON if exists (public URL)
-      return NextResponse.json({ url: null }, { status: 404 });
-    } else {
-      // Local dev: return static public path if file exists
-      const localPath = path.join(process.cwd(), "public", "Images", "Gokul_Kiran_Resume.pdf");
-      if (fs.existsSync(localPath)) {
-        return NextResponse.json({ url: "/Images/Gokul_Kiran_Resume.pdf" });
+      } catch (blobError) {
+        console.error("Blob list error (non-critical):", blobError);
       }
-      return NextResponse.json({ url: null }, { status: 404 });
     }
+
+    // Fallback: try local file
+    const localPath = path.join(process.cwd(), "public", "Images", "Gokul_Kiran_Resume.pdf");
+    if (fs.existsSync(localPath)) {
+      return NextResponse.json({ url: "/Images/Gokul_Kiran_Resume.pdf" });
+    }
+
+    // No resume found
+    return NextResponse.json({ url: null }, { status: 404 });
   } catch (error) {
-    return NextResponse.json({ error: "Failed to get resume" }, { status: 500 });
+    console.error("Resume endpoint error:", error);
+    return NextResponse.json({ url: null }, { status: 500 });
   }
 }

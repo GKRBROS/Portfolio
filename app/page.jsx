@@ -19,10 +19,11 @@ const Home = () => {
         alert('Resume not found. Please upload via Admin.');
         return;
       }
+      // Force download by creating anchor with download attribute
       const link = document.createElement('a');
       link.href = url;
-      // For Blob URLs we open instead of forcing download to avoid CORS issues
-      link.target = '_blank';
+      link.download = 'Gokul_Kiran_Resume.pdf'; // Force download instead of opening
+      link.setAttribute('target', '_blank'); // Open in new tab for Blob URLs
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);

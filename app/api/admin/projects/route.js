@@ -1,36 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
-
-let projectsCache = {
-    projects: [
-        {
-            num: "01",
-            category: "AI|ML",
-            title: "Sample Project",
-            description: "This is a sample project. Edit or delete to get started.",
-            stack: [{ name: "React" }, { name: "Python" }],
-            image: "/assets/work/project1.jpg",
-            live: "https://example.com",
-            github: "https://github.com/GKRBROS/sample"
-        }
-    ]
-};
-
-const defaultProjectsData = {
-    projects: [
-        {
-            num: "01",
-            category: "AI|ML",
-            title: "Sample Project",
-            description: "This is a sample project. Edit or delete to get started.",
-            stack: [{ name: "React" }, { name: "Python" }],
-            image: "/assets/work/project1.jpg",
-            live: "https://example.com",
-            github: "https://github.com/GKRBROS/sample"
-        }
-    ]
-};
+import { getProjects, setProjects } from "@/lib/projectsCache";
 
 export async function GET() {
     try {
@@ -40,22 +11,23 @@ export async function GET() {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        // Try to use KV if available, otherwise return cache
+        // Try to use KV if available
         if (process.env.KV_REST_API_URL) {
             try {
                 const { kv } = await import("@vercel/kv");
                 let projectsData = await kv.get("portfolio:projects");
                 if (projectsData) {
-                    projectsCache = projectsData; // Update cache
+                    setProjects(projectsData); // Sync with local cache
                     return NextResponse.json(projectsData);
                 }
             } catch {}
         }
-        // Fallback to cache
-        return NextResponse.json(projectsCache);
+        // Fallback to shared cache
+        const projectsData = getProjects();
+        return NextResponse.json(projectsData);
     } catch (error) {
         console.error("Projects GET error:", error);
-        return NextResponse.json(projectsCache);
+        return NextResponse.json(getProjects());
     }
 }
 
@@ -68,18 +40,20 @@ export async function POST(request) {
         }
 
         const newProject = await request.json();
+        let projectsData = getProjects();
 
         // Generate new project number
-        const projectCount = projectsCache.projects.length + 1;
+        const projectCount = projectsData.projects.length + 1;
         newProject.num = projectCount.toString().padStart(2, '0');
 
-        projectsCache.projects.push(newProject);
+        projectsData.projects.push(newProject);
+        setProjects(projectsData);
 
         // Try to sync to KV if available
         if (process.env.KV_REST_API_URL) {
             try {
                 const { kv } = await import("@vercel/kv");
-                await kv.set("portfolio:projects", projectsCache);
+                await kv.set("portfolio:projects", projectsData);
             } catch {}
         }
 
@@ -99,19 +73,21 @@ export async function PUT(request) {
         }
 
         const updatedProject = await request.json();
-        const index = projectsCache.projects.findIndex(p => p.num === updatedProject.num);
+        let projectsData = getProjects();
+        const index = projectsData.projects.findIndex(p => p.num === updatedProject.num);
 
         if (index === -1) {
             return NextResponse.json({ error: "Project not found" }, { status: 404 });
         }
 
-        projectsCache.projects[index] = updatedProject;
+        projectsData.projects[index] = updatedProject;
+        setProjects(projectsData);
 
         // Try to sync to KV if available
         if (process.env.KV_REST_API_URL) {
             try {
                 const { kv } = await import("@vercel/kv");
-                await kv.set("portfolio:projects", projectsCache);
+                await kv.set("portfolio:projects", projectsData);
             } catch {}
         }
 
@@ -131,19 +107,22 @@ export async function DELETE(request) {
         }
 
         const { projectNum } = await request.json();
+        let projectsData = getProjects();
 
-        projectsCache.projects = projectsCache.projects.filter(p => p.num !== projectNum);
+        projectsData.projects = projectsData.projects.filter(p => p.num !== projectNum);
 
         // Renumber projects
-        projectsCache.projects.forEach((project, index) => {
+        projectsData.projects.forEach((project, index) => {
             project.num = (index + 1).toString().padStart(2, '0');
         });
+
+        setProjects(projectsData);
 
         // Try to sync to KV if available
         if (process.env.KV_REST_API_URL) {
             try {
                 const { kv } = await import("@vercel/kv");
-                await kv.set("portfolio:projects", projectsCache);
+                await kv.set("portfolio:projects", projectsData);
             } catch {}
         }
 
